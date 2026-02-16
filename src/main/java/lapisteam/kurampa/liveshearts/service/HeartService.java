@@ -56,6 +56,16 @@ public class HeartService {
         boolean immortal = plugin.getConfig().getString("gamemode", "hard")
                 .equalsIgnoreCase("immortal");
 
+        // Инкрементируем счётчик смертей
+        int deaths = repository.findDeaths(id) + 1;
+        repository.saveDeaths(id, deaths);
+
+        // Проверяем порог бесплатных смертей
+        int freeDeaths = plugin.getConfig().getInt(ConfigKeys.HEARTS_LOSS_AFTER_DEATH, 0);
+        if (deaths <= freeDeaths) {
+            return;
+        }
+
         if (immortal) {
             if (current > 1) {
                 setHearts(id, current - 1);

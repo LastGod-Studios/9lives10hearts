@@ -6,6 +6,7 @@ public final class ConfigKeys {
     public static final String GAMEMODE = "gamemode";
     public static final String HEARTS_DEFAULT = "hearts.default";
     public static final String HEARTS_MAX = "hearts.max";
+    public static final String HEARTS_LOSS_AFTER_DEATH = "hearts.loss-after-death";
 
     public static final String RECOVERY_EAT_ENABLED = "heart-recovery.eat.enabled";
     public static final String RECOVERY_EAT_FOOD = "heart-recovery.eat.food";

@@ -24,9 +24,18 @@ public class SQLitePlayerRepository implements PlayerRepository {
             stmt.executeUpdate("""
                 CREATE TABLE IF NOT EXISTS players (
                   uuid   TEXT PRIMARY KEY,
-                  hearts INTEGER NOT NULL
+                  hearts INTEGER NOT NULL,
+                  deaths INTEGER NOT NULL DEFAULT 0
                 )
                 """);
+
+            // Миграция: добавляем колонку deaths, если её ещё нет
+            try {
+                stmt.executeUpdate("ALTER TABLE players ADD COLUMN deaths INTEGER NOT NULL DEFAULT 0");
+            } catch (SQLException ignored) {
+                // колонка уже существует
+            }
+
             initialized = true;
         } catch (SQLException ex) {
             plugin.getLogger().severe("Не удалось инициализировать базу данных: " + ex.getMessage());
@@ -72,6 +81,50 @@ public class SQLitePlayerRepository implements PlayerRepository {
 
             ps.setString(1, playerId.toString());
             ps.setInt(2, hearts);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    public int findDeaths(UUID playerId) {
+        if (!initialized) {
+            plugin.getLogger().severe("БД не инициализирована, невозможно прочитать смерти игрока " + playerId);
+            return 0;
+        }
+        String sql = "SELECT deaths FROM players WHERE uuid = ?";
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("deaths");
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return 0;
+    }
+
+    @Override
+    public void saveDeaths(UUID playerId, int deaths) {
+        if (!initialized) {
+            plugin.getLogger().severe("БД не инициализирована, невозможно сохранить смерти игрока " + playerId);
+            return;
+        }
+        String sql = """
+            INSERT INTO players (uuid, hearts, deaths)
+            VALUES (?, 0, ?)
+            ON CONFLICT(uuid) DO UPDATE SET deaths = excluded.deaths
+            """;
+        try (Connection conn = ds.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerId.toString());
+            ps.setInt(2, deaths);
             ps.executeUpdate();
         } catch (SQLException ex) {
             ex.printStackTrace();

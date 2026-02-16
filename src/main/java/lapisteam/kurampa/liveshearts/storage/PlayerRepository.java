@@ -6,4 +6,7 @@ import java.util.UUID;
 public interface PlayerRepository {
     Optional<Integer> findHearts(UUID playerId);
     void saveHearts(UUID playerId, int hearts);
+
+    int findDeaths(UUID playerId);
+    void saveDeaths(UUID playerId, int deaths);
 }
