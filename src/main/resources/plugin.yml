@@ -1,0 +1,39 @@
+name: 9lives10hearts
+version: '0.0.1'
+main: lapisteam.kurampa.liveshearts.Main
+api-version: '1.20'
+authors: [ Kryaznov ]
+description: lapisdev
+website: kurampa.com
+
+commands:
+  9l:
+    description: "123"
+    usage: ""
+
+permissions:
+  9l.set:
+    description: Разрешение на установку количества сердечек.
+    default: op
+  9l.gift:
+    description: Разрешение на передачу сердечек.
+    default: op
+  9l.add:
+    description: Разрешение на добавление сердечек.
+    default: op
+  9l.remove:
+    description: Разрешение на удаление сердечек.
+    default: op
+  9l.look:
+    description: Разрешение на просмотр числа сердечек.
+    default: op
+  9l.resurrect:
+    description: Разрешение на возможность воскресить другого игрока.
+    default: op
+  9l.totem:
+    description: Выдача уникального тотема
+    default: op
+  9l.reload:
+    description: Перезагрузка плагина
+    default: op
+
