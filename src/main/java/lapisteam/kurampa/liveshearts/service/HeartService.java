@@ -56,6 +56,9 @@ public class HeartService {
         boolean immortal = plugin.getConfig().getString("gamemode", "hard")
                 .equalsIgnoreCase("immortal");
 
+        // Гарантируем, что запись в БД существует с правильным числом сердец
+        repository.saveHearts(id, current);
+
         // Инкрементируем счётчик смертей
         int deaths = repository.findDeaths(id) + 1;
         repository.saveDeaths(id, deaths);
