@@ -39,7 +39,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
             initialized = true;
         } catch (SQLException ex) {
             plugin.getLogger().severe("Не удалось инициализировать базу данных: " + ex.getMessage());
-            ex.printStackTrace();
+            logSqlError("initialize database", ex);
         }
     }
 
@@ -60,7 +60,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
                 }
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            logSqlError("read hearts for " + playerId, ex);
         }
         return Optional.empty();
     }
@@ -83,7 +83,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
             ps.setInt(2, hearts);
             ps.executeUpdate();
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            logSqlError("save hearts for " + playerId, ex);
         }
     }
 
@@ -104,7 +104,7 @@ public class SQLitePlayerRepository implements PlayerRepository {
                 }
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            logSqlError("read deaths for " + playerId, ex);
         }
         return 0;
     }
@@ -127,7 +127,11 @@ public class SQLitePlayerRepository implements PlayerRepository {
             ps.setInt(2, deaths);
             ps.executeUpdate();
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            logSqlError("save deaths for " + playerId, ex);
         }
+    }
+
+    private void logSqlError(String action, SQLException ex) {
+        plugin.getLogger().severe("SQLite error while trying to " + action + ": " + ex.getMessage());
     }
 }

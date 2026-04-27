@@ -1,15 +1,15 @@
 name: 9lives10hearts
-version: '1.4.0.1'
+version: '${version}'
 main: lapisteam.kurampa.liveshearts.Main
 api-version: '1.20'
 authors: [ Kryaznov ]
-description: lapisdev
+description: Hardcore lives & hearts system with configurable death penalties and recovery mechanics.
 website: kurampa.com
 
 commands:
   9l:
-    description: "123"
-    usage: ""
+    description: Управление сердцами/жизнями игроков
+    usage: "/9l <set|add|remove|look|gift|resurrect|totem|reload>"
 
 permissions:
   9l.set:
@@ -36,4 +36,3 @@ permissions:
   9l.reload:
     description: Перезагрузка плагина
     default: op
-
