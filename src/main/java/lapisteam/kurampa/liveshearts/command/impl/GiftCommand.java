@@ -26,6 +26,10 @@ public final class GiftCommand implements BaseCommand {
             sender.sendMessage(lang.msg("gift_usage"));
             return;
         }
+        if (!giver.hasPermission("9l.gift")) {
+            giver.sendMessage(lang.msg("no_permission"));
+            return;
+        }
         if (args.length != 2) {
             giver.sendMessage(lang.msg("command_usage"));
             return;

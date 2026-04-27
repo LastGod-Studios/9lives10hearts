@@ -46,7 +46,9 @@ public class PlayerListener implements Listener {
         }
         double hp = hearts * 2.0;
         p.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(hp);
-        p.setHealth(hp);
+        if (p.getHealth() > hp) {
+            p.setHealth(hp);
+        }
     }
 
     @EventHandler
