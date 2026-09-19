@@ -22,7 +22,7 @@ hearts:
 # {player} будет автоматически заменён на имя игрока.
 on-zero-hearts:
   commands:
-    - "gamemode {player} spectator"
+    - "gamemode spectator {player}"
     - "tellraw {player} {\"text\":\"У вас закончились все жизни!\",\"color\":\"red\"}"
     # пример бана:
     # - "ban {player} Вы исчерпали все жизни!"
