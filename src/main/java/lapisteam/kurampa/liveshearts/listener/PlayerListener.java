@@ -4,9 +4,9 @@ import lapisteam.kurampa.liveshearts.service.HeartService;
 import lapisteam.kurampa.liveshearts.config.ConfigKeys;
 import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.util.ItemUtil;
+import lapisteam.kurampa.liveshearts.util.VersionCompat;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
@@ -25,7 +25,7 @@ public class PlayerListener implements Listener {
 
     public PlayerListener(HeartService service, JavaPlugin plugin) {
         this.service = service;
-        this.plugin  = plugin;
+        this.plugin = plugin;
     }
 
     @EventHandler
@@ -35,20 +35,23 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent e) {
-        applyHearts(e.getPlayer());
+        // RespawnEvent fires before the server has completed creating the
+        // respawned player. Applying attributes here can be overwritten.
+        Player player = e.getPlayer();
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (player.isOnline()) {
+                applyHearts(player);
+            }
+        });
     }
 
-    private void applyHearts(Player p) {
-        int hearts = service.getHearts(p.getUniqueId());
+    private void applyHearts(Player player) {
+        int hearts = service.getHearts(player.getUniqueId());
         if (hearts <= 0) {
-            p.setGameMode(GameMode.SPECTATOR);
+            player.setGameMode(GameMode.SPECTATOR);
             return;
         }
-        double hp = hearts * 2.0;
-        p.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(hp);
-        if (p.getHealth() > hp) {
-            p.setHealth(hp);
-        }
+        VersionCompat.applyMaxHealth(player, Math.min(hearts, service.getMaxHearts()));
     }
 
     @EventHandler
@@ -61,27 +64,27 @@ public class PlayerListener implements Listener {
         );
         if (food == null || e.getItem().getType() != food) return;
 
-        Player p = e.getPlayer();
-        if (p.getGameMode() == GameMode.SPECTATOR) {
-            p.sendMessage(lang.msg("hearts_spectator_mode"));
+        Player player = e.getPlayer();
+        if (player.getGameMode() == GameMode.SPECTATOR) {
+            player.sendMessage(lang.msg("hearts_spectator_mode"));
             return;
         }
 
-        int current = service.getHearts(p.getUniqueId());
+        int current = service.getHearts(player.getUniqueId());
         int max = service.getMaxHearts();
         if (current >= max) {
-            p.sendMessage(lang.msg("error_max_hearts", "max", max));
+            player.sendMessage(lang.msg("error_max_hearts", "max", max));
             return;
         }
 
-        service.addHearts(p.getUniqueId(), 1);
-        p.sendMessage(lang.msg("heart_recovered", "hearts", service.getHearts(p.getUniqueId())));
+        service.addHearts(player.getUniqueId(), 1);
+        player.sendMessage(lang.msg("heart_recovered", "hearts", service.getHearts(player.getUniqueId())));
     }
 
     @EventHandler
     public void onResurrect(EntityResurrectEvent e) {
         var lang = Lang.get();
-        if (!(e.getEntity() instanceof Player player)) return;
+        if (e.isCancelled() || !(e.getEntity() instanceof Player player)) return;
         if (!plugin.getConfig().getBoolean(ConfigKeys.TOTEM_ENABLED, true)) return;
 
         if (ItemUtil.isUniqueTotem(player.getInventory().getItemInMainHand(), plugin)
@@ -92,24 +95,21 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
-        var lang = Lang.get();
-        Player dead   = e.getEntity();
+        Player dead = e.getEntity();
         Player killer = dead.getKiller();
         service.handleDeath(dead);
 
         if (!plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_ENABLED, true)) return;
 
-        boolean onlyPvP      = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_ONLY_PVP, true);
-        double dropChance    = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_DROP_CHANCE, 1.0);
-        boolean cursedEn     = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_CURSED_ENABLED, false);
-        double cursedChance  = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_CURSED_CHANCE, 0.0);
+        boolean onlyPvP = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_ONLY_PVP, true);
+        double dropChance = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_DROP_CHANCE, 1.0);
+        boolean cursedEnabled = plugin.getConfig().getBoolean(ConfigKeys.HEAD_HEART_CURSED_ENABLED, false);
+        double cursedChance = plugin.getConfig().getDouble(ConfigKeys.HEAD_HEART_CURSED_CHANCE, 0.0);
 
         if (onlyPvP && killer == null) return;
+        if (Math.random() >= dropChance) return;
 
-        double roll = Math.random();
-        if (roll >= dropChance) return;
-
-        if (cursedEn && Math.random() < cursedChance) {
+        if (cursedEnabled && Math.random() < cursedChance) {
             e.getDrops().add(ItemUtil.createCursedHead(dead, plugin));
         } else {
             e.getDrops().add(ItemUtil.createHeartHead(dead, plugin));
