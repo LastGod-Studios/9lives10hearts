@@ -19,7 +19,7 @@ repositories {
 
 dependencies {
     // Compile against the oldest supported API by default. CI also compiles against
-    // the newest stable API to catch removed/renamed methods and constants.
+    // recent APIs to catch removed/renamed methods and constants.
     compileOnly("io.papermc.paper:paper-api:${paperApiVersion}")
     implementation('org.xerial:sqlite-jdbc:3.51.2.0')
 }
@@ -27,6 +27,16 @@ dependencies {
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+}
+
+// Java 21/25 Paper API variants require matching compilation JDKs, even though
+// this plugin deliberately produces Java 17-compatible bytecode. Keep Gradle's
+// dependency-resolution JVM separate from the plugin's target JVM.
+configurations.named('compileClasspath') {
+    attributes.attribute(
+            org.gradle.api.attributes.java.TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE,
+            JavaVersion.current().majorVersion.toInteger()
+    )
 }
 
 tasks.withType(JavaCompile).configureEach {
