@@ -3,9 +3,9 @@ package lapisteam.kurampa.liveshearts.service;
 import lapisteam.kurampa.liveshearts.config.ConfigKeys;
 import lapisteam.kurampa.liveshearts.config.Lang;
 import lapisteam.kurampa.liveshearts.storage.PlayerRepository;
+import lapisteam.kurampa.liveshearts.util.VersionCompat;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,7 +19,7 @@ public class HeartService {
 
     public HeartService(PlayerRepository repository, JavaPlugin plugin) {
         this.repository = repository;
-        this.plugin     = plugin;
+        this.plugin = plugin;
     }
 
     private int getDefaultHearts() {
@@ -27,7 +27,7 @@ public class HeartService {
     }
 
     public int getMaxHearts() {
-        return plugin.getConfig().getInt(ConfigKeys.HEARTS_MAX, 10);
+        return Math.max(1, plugin.getConfig().getInt(ConfigKeys.HEARTS_MAX, 10));
     }
 
     public int getHearts(UUID playerId) {
@@ -56,14 +56,10 @@ public class HeartService {
         boolean immortal = plugin.getConfig().getString("gamemode", "hard")
                 .equalsIgnoreCase("immortal");
 
-        // Гарантируем, что запись в БД существует с правильным числом сердец
         repository.saveHearts(id, current);
-
-        // Инкрементируем счётчик смертей
         int deaths = repository.findDeaths(id) + 1;
         repository.saveDeaths(id, deaths);
 
-        // Проверяем порог бесплатных смертей
         int freeDeaths = plugin.getConfig().getInt(ConfigKeys.HEARTS_LOSS_AFTER_DEATH, 0);
         if (deaths <= freeDeaths) {
             return;
@@ -80,11 +76,12 @@ public class HeartService {
             setHearts(id, current - 1);
             player.sendMessage(lang.msg("hearts_decreased", "hearts", current - 1));
         } else {
+            // Persist zero, but do not set an invalid zero max-health attribute
+            // or forcibly call setHealth(0) inside PlayerDeathEvent.
             setHearts(id, 0);
 
             List<String> cmds = plugin.getConfig()
                     .getStringList(ConfigKeys.ON_ZERO_COMMANDS);
-
             if (cmds.isEmpty()) {
                 player.setGameMode(GameMode.SPECTATOR);
                 player.sendMessage(lang.msg("spectator_mode"));
@@ -100,12 +97,8 @@ public class HeartService {
 
     private void applyHealthAttribute(UUID playerId, int hearts) {
         Player player = Bukkit.getPlayer(playerId);
-        if (player == null) return;
-
-        double maxHp = hearts * 2.0;
-        player.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(maxHp);
-        if (player.getHealth() > maxHp) {
-            player.setHealth(maxHp);
+        if (player != null) {
+            VersionCompat.applyMaxHealth(player, hearts);
         }
     }
 }
