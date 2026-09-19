@@ -1,0 +1,55 @@
+name: Paper compatibility
+
+on:
+  push:
+    branches:
+      - main
+      - 'compat/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - paper-api: '1.20.1-R0.1-SNAPSHOT'
+            java: '17'
+          - paper-api: '1.21.11-R0.1-SNAPSHOT'
+            java: '21'
+          - paper-api: '26.2.build.124-stable'
+            java: '25'
+
+    name: Paper ${{ matrix.paper-api }} / Java ${{ matrix.java }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build with this Paper API
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon clean build -PpaperApiVersion=${{ matrix.paper-api }}
+      - name: Verify shaded SQLite and Java 17 bytecode
+        shell: bash
+        run: |
+          set -euo pipefail
+          jarfile="build/libs/9lives10hearts-1.5.0.jar"
+          test -f "$jarfile"
+          jar tf "$jarfile" | grep -q '^org/sqlite/SQLiteDataSource.class$'
+          unzip -p "$jarfile" plugin.yml | grep -q "version: '1.5.0'"
+          javap -verbose -classpath "$jarfile" lapisteam.kurampa.liveshearts.Main | grep -q 'major version: 61'
+      - uses: actions/upload-artifact@v4
+        if: matrix.java == '17'
+        with:
+          name: 9lives10hearts-1.5.0
+          path: build/libs/9lives10hearts-1.5.0.jar
+          if-no-files-found: error
