@@ -29,6 +29,7 @@ public final class ConfigKeys {
     public static final String HEAD_HEART_CURSED_CONTAINER = "head-heart.cursed.container";
     public static final String HEAD_HEART_CURSED_NAME = "head-heart.cursed.name";
     public static final String HEAD_HEART_CURSED_LORE = "head-heart.cursed.lore";
+    public static final String HEAD_HEART_CURSED_VALUE = "head-heart.cursed.value";
     public static final String HEAD_HEART_CURSED_AMOUNT = "head-heart.cursed.amount-heart";
 
     public static final String ON_ZERO_COMMANDS = "on-zero-hearts.commands";
